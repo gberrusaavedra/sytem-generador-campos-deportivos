@@ -1270,3 +1270,68 @@ canvas#cv:active { cursor: grabbing; }
     gap: 6px;
   }
 }
+/* =========================================================
+   ACABADO PROFESIONAL PANEL LATERAL (ESTILO CAD SLATE)
+   ========================================================= */
+aside {
+  background: #f1f5f9 !important;
+  border-right: 1px solid #cbd5e1 !important;
+}
+
+aside .content {
+  background: #f1f5f9 !important;
+  padding: 16px 14px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 14px !important;
+}
+
+/* Tarjetas de configuración (Estilo de Césped, Malla, etc.) */
+aside .content > div[style*="border"],
+aside .control-group,
+aside .section-box {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  border-left: 3px solid #0284c7 !important;
+  border-radius: 10px !important;
+  padding: 12px !important;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.04) !important;
+}
+
+/* Títulos de sección técnicos */
+aside h2,
+aside h3,
+aside .section-title {
+  color: #0f172a !important;
+  font-size: 11px !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.6px !important;
+  text-transform: uppercase !important;
+  border-left: 3px solid #0284c7 !important;
+  padding-left: 8px !important;
+}
+
+/* Etiquetas y selectores más limpios */
+aside label {
+  color: #334155 !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+}
+
+aside select,
+aside input[type="number"],
+aside input[type="text"] {
+  background: #f8fafc !important;
+  border: 1px solid #cbd5e1 !important;
+  border-radius: 6px !important;
+  color: #0f172a !important;
+  font-size: 11.5px !important;
+  font-weight: 600 !important;
+}
+
+aside select:focus,
+aside input:focus {
+  border-color: #0284c7 !important;
+  outline: none !important;
+  box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.15) !important;
+}
