@@ -2169,3 +2169,424 @@ actualizarBarraSesion();
   `;
   document.body.appendChild(btn);
 })();
+/* ==========================================================================
+   LÓGICA PURA: TERRENO TOTAL + POSTES EN SARDINEL + COTAS EXTERIORES
+   ========================================================================== */
+(function initTerrenoSardinelYPostes() {
+  const MEDIDAS_POSTES = {
+    fierro: [
+      { id: "f-2x4", texto: 'Fierro 2" x 4.00 m (Esp. 2mm)', alto: 4.0, seccion: '2"', precioRef: 135 },
+      { id: "f-3x5", texto: 'Fierro 3" x 5.00 m (Esp. 2.5mm)', alto: 5.0, seccion: '3"', precioRef: 210 },
+      { id: "f-3x6", texto: 'Fierro 3" x 6.00 m (Esp. 3mm)', alto: 6.0, seccion: '3"', precioRef: 265 },
+      { id: "f-4x6", texto: 'Fierro 4" x 6.00 m (Pesado)', alto: 6.0, seccion: '4"', precioRef: 340 }
+    ],
+    concreto: [
+      { id: "c-15x4", texto: "Concreto 8 m", alto: 8.0, seccion: "15x15cm", precioRef: 160 },
+      { id: "c-15x5", texto: "Concreto 9 m", alto: 9.0, seccion: "15x15cm", precioRef: 195 },
+      { id: "c-20x6", texto: "Concreto 12 m", alto: 12.0, seccion: "20x20cm", precioRef: 250 },
+      { id: "c-circ6", texto: "Concreto 15 m", alto: 15.0, seccion: "Ø18cm", precioRef: 280 }
+    ]
+  };
+
+  let mostrarPostes = false;
+  let datosPostes = null;
+
+  function generarPosicionesEje(longitudTotal, paso) {
+    const pos = [0];
+    let actual = paso;
+    while (actual < longitudTotal - 0.15) {
+      pos.push(Number(actual.toFixed(2)));
+      actual += paso;
+    }
+    pos.push(Number(longitudTotal.toFixed(2)));
+    return pos;
+  }
+
+  function recalcularYRedibujarPostes() {
+    const selMat = document.getElementById("poste-mat");
+    const selMed = document.getElementById("poste-med");
+    const inpSepLargo = document.getElementById("poste-sep-largo");
+    const inpSepAncho = document.getElementById("poste-sep-ancho");
+    const boxResumen = document.getElementById("resumen-postes-sardinel");
+    if (!selMat || !selMed || !inpSepLargo || !inpSepAncho || !boxResumen) return;
+
+    const mat = selMat.value;
+    const medObj = MEDIDAS_POSTES[mat].find((x) => x.id === selMed.value) || MEDIDAS_POSTES[mat][0];
+
+    const pasoLargo = Math.max(0.5, parseFloat(inpSepLargo.value) || 3);
+    const pasoAncho = Math.max(0.5, parseFloat(inpSepAncho.value) || 3);
+
+    const totalPlayH = (state.wid * state.numFields) + (state.gap * (state.numFields - 1));
+    const sepF = state.hasSardinel ? state.sardinelSepFondos : 0;
+    const sepL = state.hasSardinel ? state.sardinelSepLaterales : 0;
+    const espesorM = state.hasSardinel ? (state.sardinelWidthCm / 100) : 0;
+
+    const largoExterior = Number((state.len + 2 * sepF + 2 * espesorM).toFixed(2));
+    const anchoExterior = Number((totalPlayH + 2 * sepL + 2 * espesorM).toFixed(2));
+
+    const posLargo = generarPosicionesEje(largoExterior, pasoLargo);
+    const posAncho = generarPosicionesEje(anchoExterior, pasoAncho);
+
+    const totalPostes = posLargo.length * 2 + (posAncho.length - 2) * 2;
+    const costoTotal = totalPostes * medObj.precioRef;
+    const cierreLargo = (posLargo[posLargo.length - 1] - posLargo[posLargo.length - 2]).toFixed(2);
+    const cierreAncho = (posAncho[posAncho.length - 1] - posAncho[posAncho.length - 2]).toFixed(2);
+
+    datosPostes = {
+      mat,
+      medObj,
+      pasoLargo: pasoLargo.toFixed(2),
+      pasoAncho: pasoAncho.toFixed(2),
+      largoExterior,
+      anchoExterior,
+      posLargo,
+      posAncho,
+      totalPostes,
+      costoTotal
+    };
+
+    boxResumen.innerHTML =
+      `<div>• <strong>Perímetro Ext. Sardinel:</strong> ${largoExterior.toFixed(2)}m × ${anchoExterior.toFixed(2)}m</div>` +
+      `<div>• <strong>Total Postes:</strong> ${totalPostes} und. ${mat === "fierro" ? "Fierro" : "Concreto"} (${medObj.seccion})</div>` +
+      `<div>• <strong>Sep. Largo:</strong> ${pasoLargo.toFixed(2)}m (cierre ${cierreLargo}m) | <strong>Ancho:</strong> ${pasoAncho.toFixed(2)}m (cierre ${cierreAncho}m)</div>` +
+      `<div>• <strong>Presupuesto ref.:</strong> S/ ${costoTotal.toLocaleString("es-PE", { minimumFractionDigits: 2 })}</div>`;
+
+    dibujarOverlayPostesYCotas();
+  }
+
+  function dibujarOverlayPostesYCotas() {
+    if (!cv || !container) return;
+
+    let capa = document.getElementById("svg-postes-sardinel");
+    if (!capa) {
+      capa = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      capa.id = "svg-postes-sardinel";
+      capa.style.position = "absolute";
+      capa.style.left = "0px";
+      capa.style.top = "0px";
+      capa.style.pointerEvents = "none";
+      capa.style.zIndex = "25";
+      container.appendChild(capa);
+    }
+
+    const rectCont = container.getBoundingClientRect();
+    capa.style.width = rectCont.width + "px";
+    capa.style.height = rectCont.height + "px";
+    capa.setAttribute("viewBox", `0 0 ${rectCont.width} ${rectCont.height}`);
+    capa.innerHTML = "";
+
+    if (!mostrarPostes || !datosPostes) return;
+
+    const d = datosPostes;
+    const scale = state.zoom;
+    const wPx = d.largoExterior * scale;
+    const hPx = d.anchoExterior * scale;
+    const x0 = state.panX - wPx / 2;
+    const y0 = state.panY - hPx / 2;
+
+    const esFierro = d.mat === "fierro";
+    const colorPoste = esFierro ? "#0f172a" : "#ffffff";      // Negro para Fierro | Blanco para Concreto
+    const bordePoste = esFierro ? "#ffffff" : "#0f172a";      // Filete de contraste
+    const colorTextoPoste = esFierro ? "#e2e8f0" : "#ffffff";
+
+    // 1. Eje perimetral exterior del sardinel
+    const eje = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+    eje.setAttribute("x", x0);
+    eje.setAttribute("y", y0);
+    eje.setAttribute("width", wPx);
+    eje.setAttribute("height", hPx);
+    eje.setAttribute("fill", "none");
+    eje.setAttribute("stroke", colorPoste);
+    eje.setAttribute("stroke-width", "1.3");
+    eje.setAttribute("stroke-dasharray", "4 4");
+    capa.appendChild(eje);
+
+    // 2. Postes en los 4 lados con separación independiente en Largo y Ancho
+    const postes = [];
+    d.posLargo.forEach((mX, idx) => {
+      const px = x0 + mX * scale;
+      const esEsq = idx === 0 || idx === d.posLargo.length - 1;
+      postes.push({ x: px, y: y0, esEsq });
+      postes.push({ x: px, y: y0 + hPx, esEsq });
+    });
+
+    for (let j = 1; j < d.posAncho.length - 1; j++) {
+      const py = y0 + d.posAncho[j] * scale;
+      postes.push({ x: x0, y: py, esEsq: false });
+      postes.push({ x: x0 + wPx, y: py, esEsq: false });
+    }
+
+    postes.forEach((p) => {
+      if (esFierro) {
+        const c = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        c.setAttribute("cx", p.x);
+        c.setAttribute("cy", p.y);
+        c.setAttribute("r", p.esEsq ? "5.2" : "4");
+        c.setAttribute("fill", colorPoste);
+        c.setAttribute("stroke", bordePoste);
+        c.setAttribute("stroke-width", "1.5");
+        capa.appendChild(c);
+      } else {
+        const tam = p.esEsq ? 9.5 : 7.5;
+        const r = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+        r.setAttribute("x", p.x - tam / 2);
+        r.setAttribute("y", p.y - tam / 2);
+        r.setAttribute("width", tam);
+        r.setAttribute("height", tam);
+        r.setAttribute("rx", "1");
+        r.setAttribute("fill", colorPoste);
+        r.setAttribute("stroke", bordePoste);
+        r.setAttribute("stroke-width", "1.5");
+        capa.appendChild(r);
+      }
+    });
+
+    const tag = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    tag.setAttribute("x", x0);
+    tag.setAttribute("y", y0 + hPx + 15);
+    tag.setAttribute("fill", colorTextoPoste);
+    tag.setAttribute("font-size", "10.5");
+    tag.setAttribute("font-weight", "bold");
+    tag.setAttribute("font-family", "sans-serif");
+    tag.textContent = `CERCO POSTES: ${d.totalPostes} UND. ${esFierro ? "FIERRO" : "CONCRETO"} (${d.medObj.seccion} x ${d.medObj.alto}m) | Largo @ ${d.pasoLargo}m / Ancho @ ${d.pasoAncho}m`;
+    capa.appendChild(tag);
+
+    // 3. Cotas exteriores del sardinel
+    const colorCota = "#fbbf24";
+    const yCotaInf = y0 + hPx + 30;
+
+    const lineaH = document.createElementNS("http://www.w3.org/2000/svg", "line");
+    lineaH.setAttribute("x1", x0);
+    lineaH.setAttribute("y1", yCotaInf);
+    lineaH.setAttribute("x2", x0 + wPx);
+    lineaH.setAttribute("y2", yCotaInf);
+    lineaH.setAttribute("stroke", colorCota);
+    lineaH.setAttribute("stroke-width", "1.3");
+    capa.appendChild(lineaH);
+
+    [x0, x0 + wPx].forEach((xExt) => {
+      const tick = document.createElementNS("http://www.w3.org/2000/svg", "line");
+      tick.setAttribute("x1", xExt - 4);
+      tick.setAttribute("y1", yCotaInf + 4);
+      tick.setAttribute("x2", xExt + 4);
+      tick.setAttribute("y2", yCotaInf - 4);
+      tick.setAttribute("stroke", colorCota);
+      tick.setAttribute("stroke-width", "1.5");
+      capa.appendChild(tick);
+    });
+
+    const centroX = x0 + wPx / 2;
+    const bgH = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+    bgH.setAttribute("x", centroX - 72);
+    bgH.setAttribute("y", yCotaInf - 9);
+    bgH.setAttribute("width", "144");
+    bgH.setAttribute("height", "18");
+    bgH.setAttribute("rx", "4");
+    bgH.setAttribute("fill", "#0b2216");
+    bgH.setAttribute("stroke", colorCota);
+    bgH.setAttribute("stroke-width", "1");
+    capa.appendChild(bgH);
+
+    const labelH = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    labelH.setAttribute("x", centroX);
+    labelH.setAttribute("y", yCotaInf + 3.5);
+    labelH.setAttribute("fill", colorCota);
+    labelH.setAttribute("font-size", "10.5");
+    labelH.setAttribute("font-weight", "bold");
+    labelH.setAttribute("font-family", "sans-serif");
+    labelH.setAttribute("text-anchor", "middle");
+    labelH.textContent = `Sardinel Ext.: ${d.largoExterior.toFixed(2)} m`;
+    capa.appendChild(labelH);
+
+    const xCotaDer = x0 + wPx + 74;
+    const lineaV = document.createElementNS("http://www.w3.org/2000/svg", "line");
+    lineaV.setAttribute("x1", xCotaDer);
+    lineaV.setAttribute("y1", y0);
+    lineaV.setAttribute("x2", xCotaDer);
+    lineaV.setAttribute("y2", y0 + hPx);
+    lineaV.setAttribute("stroke", colorCota);
+    lineaV.setAttribute("stroke-width", "1.3");
+    capa.appendChild(lineaV);
+
+    [y0, y0 + hPx].forEach((yExt) => {
+      const aux = document.createElementNS("http://www.w3.org/2000/svg", "line");
+      aux.setAttribute("x1", x0 + wPx + 6);
+      aux.setAttribute("y1", yExt);
+      aux.setAttribute("x2", xCotaDer + 4);
+      aux.setAttribute("y2", yExt);
+      aux.setAttribute("stroke", colorCota);
+      aux.setAttribute("stroke-width", "0.8");
+      aux.setAttribute("stroke-dasharray", "3 3");
+      aux.setAttribute("opacity", "0.65");
+      capa.appendChild(aux);
+
+      const tick = document.createElementNS("http://www.w3.org/2000/svg", "line");
+      tick.setAttribute("x1", xCotaDer - 4);
+      tick.setAttribute("y1", yExt + 4);
+      tick.setAttribute("x2", xCotaDer + 4);
+      tick.setAttribute("y2", yExt - 4);
+      tick.setAttribute("stroke", colorCota);
+      tick.setAttribute("stroke-width", "1.5");
+      capa.appendChild(tick);
+    });
+
+    const centroY = y0 + hPx / 2;
+    const bgV = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+    bgV.setAttribute("x", xCotaDer - 10);
+    bgV.setAttribute("y", centroY - 58);
+    bgV.setAttribute("width", "20");
+    bgV.setAttribute("height", "116");
+    bgV.setAttribute("rx", "4");
+    bgV.setAttribute("fill", "#0b2216");
+    bgV.setAttribute("stroke", colorCota);
+    bgV.setAttribute("stroke-width", "1");
+    capa.appendChild(bgV);
+
+    const labelV = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    labelV.setAttribute("x", xCotaDer + 3.5);
+    labelV.setAttribute("y", centroY);
+    labelV.setAttribute("fill", colorCota);
+    labelV.setAttribute("font-size", "10.5");
+    labelV.setAttribute("font-weight", "bold");
+    labelV.setAttribute("font-family", "sans-serif");
+    labelV.setAttribute("text-anchor", "middle");
+    labelV.setAttribute("transform", `rotate(90, ${xCotaDer}, ${centroY})`);
+    labelV.textContent = `Sardinel: ${d.anchoExterior.toFixed(2)} m`;
+    capa.appendChild(labelV);
+  }
+
+  function inicializarEventos() {
+    const btnTerreno = document.getElementById("btn-aplicar-terreno");
+    const chkActivar = document.getElementById("chk-activar-postes");
+    const boxDetalle = document.getElementById("controles-postes-detalle");
+    const selMat = document.getElementById("poste-mat");
+    const selMed = document.getElementById("poste-med");
+    const inpSepLargo = document.getElementById("poste-sep-largo");
+    const inpSepAncho = document.getElementById("poste-sep-ancho");
+
+    const idsCampos = [
+      "inp-len",
+      "inp-wid",
+      "inp-gap",
+      "chk-has-sardinel",
+      "inp-sardinel-sep-fondos",
+      "inp-sardinel-sep-laterales",
+      "inp-sardinel-w"
+    ];
+
+    idsCampos.forEach((id) => {
+      const el = document.getElementById(id);
+      if (el) {
+        el.addEventListener("input", recalcularYRedibujarPostes);
+        el.addEventListener("change", recalcularYRedibujarPostes);
+      }
+    });
+
+    if (typeof window.updateDims === "function" && !window.updateDims._postesHooked) {
+      const originalUpdateDims = window.updateDims;
+      window.updateDims = function () {
+        originalUpdateDims.apply(this, arguments);
+        recalcularYRedibujarPostes();
+      };
+      window.updateDims._postesHooked = true;
+    }
+
+    if (btnTerreno) {
+      btnTerreno.addEventListener("click", () => {
+        const tLargo = Math.max(12, parseFloat(document.getElementById("terreno-largo").value) || 35);
+        const tAncho = Math.max(10, parseFloat(document.getElementById("terreno-ancho").value) || 27);
+        const modo = document.getElementById("terreno-modo").value;
+        const espesorSardinel = 0.15;
+
+        let cLargo, cAncho, retFondo, retBanda;
+        if (modo === "estandar" && tLargo >= 33 && tAncho >= 23) {
+          cLargo = 30;
+          cAncho = 20;
+          retFondo = Number(((tLargo - cLargo - espesorSardinel * 2) / 2).toFixed(2));
+          retBanda = Number(((tAncho - cAncho - espesorSardinel * 2) / 2).toFixed(2));
+        } else {
+          retFondo = 1.50;
+          retBanda = 1.50;
+          cLargo = Number((tLargo - (retFondo + espesorSardinel) * 2).toFixed(2));
+          cAncho = Number((tAncho - (retBanda + espesorSardinel) * 2).toFixed(2));
+        }
+
+        const areaTerreno = (tLargo * tAncho).toFixed(2);
+        const areaGrass = ((tLargo - espesorSardinel * 2) * (tAncho - espesorSardinel * 2)).toFixed(2);
+
+        const divInfo = document.getElementById("terreno-info");
+        if (divInfo) {
+          divInfo.innerHTML =
+            `<div>• <strong>Terreno Total:</strong> ${tLargo.toFixed(2)}m × ${tAncho.toFixed(2)}m (${areaTerreno} m²)</div>` +
+            `<div>• <strong>Cancha Útil:</strong> ${cLargo.toFixed(2)}m × ${cAncho.toFixed(2)}m</div>` +
+            `<div>• <strong>Retiros:</strong> Fondos ${retFondo}m | Bandas ${retBanda}m | Sardinel 15cm</div>` +
+            `<div>• <strong>Grass Total:</strong> ${areaGrass} m²</div>`;
+        }
+
+        document.getElementById("chk-has-sardinel").checked = true;
+        document.getElementById("inp-len").value = cLargo;
+        document.getElementById("inp-wid").value = cAncho;
+        document.getElementById("inp-sardinel-sep-fondos").value = retFondo;
+        document.getElementById("inp-sardinel-sep-laterales").value = retBanda;
+        document.getElementById("inp-sardinel-w").value = 15;
+
+        if (typeof updateDims === "function") updateDims();
+        if (typeof resetFit === "function") resetFit();
+
+        if (chkActivar && !chkActivar.checked) {
+          chkActivar.checked = true;
+          chkActivar.dispatchEvent(new Event("change"));
+        } else {
+          recalcularYRedibujarPostes();
+        }
+      });
+    }
+
+    if (selMat && selMed) {
+      const llenarMedidas = () => {
+        const mat = selMat.value;
+        selMed.innerHTML = "";
+        MEDIDAS_POSTES[mat].forEach((m) => {
+          const opt = document.createElement("option");
+          opt.value = m.id;
+          opt.textContent = m.texto;
+          selMed.appendChild(opt);
+        });
+      };
+
+      chkActivar.addEventListener("change", () => {
+        mostrarPostes = chkActivar.checked;
+        if (boxDetalle) boxDetalle.style.display = mostrarPostes ? "block" : "none";
+        recalcularYRedibujarPostes();
+      });
+
+      selMat.addEventListener("change", () => {
+        llenarMedidas();
+        recalcularYRedibujarPostes();
+      });
+      selMed.addEventListener("change", recalcularYRedibujarPostes);
+      inpSepLargo.addEventListener("input", recalcularYRedibujarPostes);
+      inpSepAncho.addEventListener("input", recalcularYRedibujarPostes);
+
+      llenarMedidas();
+      recalcularYRedibujarPostes();
+    }
+
+    if (typeof window.draw === "function" && !window.draw._postesHooked) {
+      const originalDraw = window.draw;
+      window.draw = function () {
+        originalDraw.apply(this, arguments);
+        if (mostrarPostes) {
+          recalcularYRedibujarPostes();
+        }
+      };
+      window.draw._postesHooked = true;
+    }
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", inicializarEventos);
+  } else {
+    inicializarEventos();
+  }
+})();

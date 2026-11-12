@@ -41,7 +41,33 @@
 
       <!-- Distribución de canchas -->
     <div class="content">
-      
+      <!-- Diseño desde Terreno Total -->
+      <div class="sub-panel" style="background: #ecfdf5; border-color: #10b981;">
+        <div class="section-title text-green" style="margin-top: 0;">Diseño desde Terreno Total (m)</div>
+        <div class="input-row">
+          <div class="form-group">
+            <label for="terreno-largo">Largo Terreno (m)</label>
+            <input type="number" id="terreno-largo" value="35" min="10" max="150" step="0.5">
+          </div>
+          <div class="form-group">
+            <label for="terreno-ancho">Ancho Terreno (m)</label>
+            <input type="number" id="terreno-ancho" value="27" min="8" max="120" step="0.5">
+          </div>
+        </div>
+        <div class="form-group mt-6">
+          <label for="terreno-modo">Criterio de Distribución</label>
+          <select id="terreno-modo">
+            <option value="estandar">Cancha Estándar 30x20 + Retiros Amplios</option>
+            <option value="maximo">Maximizar Cancha (Retiro 1.50m + Sardinel)</option>
+          </select>
+        </div>
+        <div id="terreno-info" style="font-size: 11px; color: #064e3b; background: #ffffff; padding: 6px 8px; border-radius: 6px; border: 1px dashed #34d399; margin: 6px 0; line-height: 1.45;">
+          Terreno: <strong>35.00m × 27.00m</strong> (945.00 m²)
+        </div>
+        <button type="button" id="btn-aplicar-terreno" class="btn active" style="width: 100%; background: #059669; border-color: #059669; color: #ffffff;">
+          Ajustar Campo, Sardinel y Postes al Terreno
+        </button>
+      </div>
 
       <!-- Distribución de canchas -->
       <div>
@@ -392,7 +418,41 @@
           </div>
         </div>
       </div>
+<!-- CONFIGURACIÓN DE POSTES PERIMETRALES (BORDE EXT. SARDINEL) -->
+      <div class="sub-panel mt-6">
+        <label class="checkbox-inner-label">
+          <input type="checkbox" id="chk-activar-postes">
+          <span class="font-bold text-accent">Postes Perimetrales (Borde Ext. Sardinel)</span>
+        </label>
+        <div id="controles-postes-detalle" style="display: none; margin-top: 8px; border-top: 1px solid #e2e8f0; padding-top: 8px;">
+          <div class="input-row">
+            <div class="form-group">
+              <label for="poste-mat">Material</label>
+              <select id="poste-mat">
+                <option value="fierro">Fierro (Negro)</option>
+                <option value="concreto">Concreto (Blanco)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="poste-med">Medida del Poste</label>
+              <select id="poste-med"></select>
+            </div>
+          </div>
 
+          <div class="input-row mt-6">
+            <div class="form-group">
+              <label for="poste-sep-largo">Separación Largo (m)</label>
+              <input type="number" id="poste-sep-largo" value="3.00" min="0.5" max="50" step="0.05" placeholder="Ej: 3.00">
+            </div>
+            <div class="form-group">
+              <label for="poste-sep-ancho">Separación Ancho (m)</label>
+              <input type="number" id="poste-sep-ancho" value="3.00" min="0.5" max="50" step="0.05" placeholder="Ej: 2.70">
+            </div>
+          </div>
+
+          <div id="resumen-postes-sardinel" style="background: #f8fafc; border: 1px dashed #64748b; border-radius: 6px; padding: 7px 9px; font-size: 11px; color: #1e293b; margin-top: 6px; line-height: 1.45;"></div>
+        </div>
+      </div>
       <!-- Trazado de Vóley -->
       <div>
         <div class="section-title">Polideportivo / Cancha de Vóley</div>
