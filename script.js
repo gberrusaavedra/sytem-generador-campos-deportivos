@@ -1990,12 +1990,20 @@ function actualizarBarraSesion() {
   const userStr = localStorage.getItem('usuario_actual');
   const bar = document.getElementById('user-session-bar');
   const nameSpan = document.getElementById('user-display-name');
+  const avatarDiv = document.getElementById('user-avatar-initials');
 
   if (token && userStr) {
     try {
       const user = JSON.parse(userStr);
       if (bar && nameSpan) {
-        nameSpan.innerText = '👤 ' + user.nombre;
+        nameSpan.innerText = user.nombre;
+        if (avatarDiv && user.nombre) {
+          const partes = user.nombre.trim().split(/\s+/);
+          const iniciales = partes.length >= 2
+            ? (partes[0][0] + partes[1][0]).toUpperCase()
+            : user.nombre.slice(0, 2).toUpperCase();
+          avatarDiv.innerText = iniciales;
+        }
         bar.style.display = 'flex';
       }
       closeAuthModal();
@@ -2007,13 +2015,3 @@ function actualizarBarraSesion() {
     openAuthModal();
   }
 }
-
-function cerrarSesionUsuario() {
-  localStorage.removeItem('token_sesion');
-  localStorage.removeItem('usuario_actual');
-  actualizarBarraSesion();
-}
-
-window.addEventListener('DOMContentLoaded', () => {
-  actualizarBarraSesion();
-});
