@@ -1859,3 +1859,90 @@ setFieldColor = function(hex, btnId) {
   if (btn) btn.classList.add('active');
   draw();
 };
+/* =========================================================
+   CONEXIÓN CON BASE DE DATOS Y GESTIÓN DE USUARIOS
+   ========================================================= */
+const API_URL = 'https://backend-cadsport.onrender.com/api';
+
+// Registrar usuario
+async function registrarNuevoUsuario(nombre, email, password) {
+  try {
+    const respuesta = await fetch(`${API_URL}/usuarios/registro`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nombre, email, password })
+    });
+
+    const data = await respuesta.json();
+    if (!respuesta.ok) {
+      alert('Error: ' + data.error);
+      return false;
+    }
+
+    alert('¡Usuario registrado con éxito!');
+    return true;
+  } catch (err) {
+    console.error('Error de red:', err);
+    alert('No se pudo conectar con el servidor (si estaba inactivo, espera 50 segundos e intenta de nuevo).');
+    return false;
+  }
+}
+
+// Iniciar sesión (Login)
+async function iniciarSesionUsuario(email, password) {
+  try {
+    const respuesta = await fetch(`${API_URL}/usuarios/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+
+    const data = await respuesta.json();
+    if (!respuesta.ok) {
+      alert('Error: ' + data.error);
+      return false;
+    }
+
+    localStorage.setItem('token_sesion', data.token);
+    localStorage.setItem('usuario_actual', JSON.stringify(data.usuario));
+    alert('Bienvenido, ' + data.usuario.nombre);
+    return true;
+  } catch (err) {
+    console.error('Error de red:', err);
+    alert('No se pudo conectar con el servidor (si estaba inactivo, espera 50 segundos e intenta de nuevo).');
+    return false;
+  }
+}
+
+// Guardar el proyecto/cancha actual en la BD
+async function guardarProyectoEnBD(nombreProyecto) {
+  const token = localStorage.getItem('token_sesion');
+  if (!token) {
+    alert('Debes iniciar sesión para guardar tus proyectos.');
+    return;
+  }
+
+  try {
+    const res = await fetch(`${API_URL}/proyectos`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        nombre: nombreProyecto,
+        configuracion: state
+      })
+    });
+
+    const data = await res.json();
+    if (res.ok) {
+      alert('Plano deportivo guardado correctamente en Neon.');
+    } else {
+      alert('Error al guardar: ' + data.error);
+    }
+  } catch (e) {
+    console.error('Error al guardar:', e);
+    alert('Error de conexión al guardar el plano.');
+  }
+}
