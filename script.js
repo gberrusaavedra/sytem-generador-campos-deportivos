@@ -1976,3 +1976,38 @@ async function guardarProyectoPrompt() {
 
   await guardarProyectoEnBD(nombreProyecto.trim());
 }
+/* =========================================================
+   ACCESO OBLIGATORIO: LOGIN / REGISTRO AL INICIAR EL SISTEMA
+   ========================================================= */
+function actualizarBarraSesion() {
+  const token = localStorage.getItem('token_sesion');
+  const userStr = localStorage.getItem('usuario_actual');
+  const bar = document.getElementById('user-session-bar');
+  const nameSpan = document.getElementById('user-display-name');
+
+  if (token && userStr) {
+    try {
+      const user = JSON.parse(userStr);
+      if (bar && nameSpan) {
+        nameSpan.innerText = '👤 ' + user.nombre;
+        bar.style.display = 'flex';
+      }
+      closeAuthModal();
+    } catch (e) {
+      openAuthModal();
+    }
+  } else {
+    if (bar) bar.style.display = 'none';
+    openAuthModal();
+  }
+}
+
+function cerrarSesionUsuario() {
+  localStorage.removeItem('token_sesion');
+  localStorage.removeItem('usuario_actual');
+  actualizarBarraSesion();
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+  actualizarBarraSesion();
+});
