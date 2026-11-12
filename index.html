@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#091e3a">
-  <title>Plano CAD Deportivo Profesional - Grass Franjeado y Replanteo</title>
+  <title>Plano Deportivo Profesional - Grass Franjeado y Replanteo</title>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -15,7 +15,7 @@
   <!-- Barra de Configuración Lateral -->
   <aside>
  <div class="header">
-   <h1>CAD Sport Replanteo Pro</h1>
+   <h1>SISTEMA DEPORTIVO BERRU</h1>
    <p>Grass franjeado, multicanchas, replanteo y cotas de trazado</p>
   <div id="user-session-bar" style="display: none; margin-top: 12px; padding: 8px 10px; background: linear-gradient(135deg, rgba(2, 132, 199, 0.28), rgba(15, 23, 42, 0.75)); border: 1px solid rgba(56, 189, 248, 0.45); border-radius: 8px; align-items: center; justify-content: space-between; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);">
         <div style="display: flex; align-items: center; gap: 9px; overflow: hidden;">
@@ -485,15 +485,35 @@
     </div>
 
     <!-- Botones de Acción -->
-    <div class="actions">
-      <button class="btn-action quotation-btn" onclick="openQuotationModal()">📋 Formato de Cotización</button>
-      <button class="btn-action primary" onclick="downloadImage()">Descargar PNG</button>
-      <button class="btn-action secondary" onclick="printCleanPdf()">Imprimir PDF Plano</button>
-      <button type="button" class="btn-action net-btn" onclick="openNetQuotationModal()">🕸️ Cotización de Malla</button>
-      <button type="button" class="btn-action" onclick="guardarProyectoPrompt()" style="background:#0284c7;">💾 Guardar en Base de Datos</button>
+    <div class="actions" style="padding: 12px 14px; background: #f8fafc; border-top: 1px solid #e2e8f0; display: flex; flex-direction: column; gap: 8px;">
+      
+      <!-- Grupo 1: Cotizaciones Comerciales -->
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 7px;">
+        <button type="button" class="btn-action quotation-btn" onclick="openQuotationModal()" style="margin: 0; padding: 9px 8px; font-size: 11px; font-weight: 700; border-radius: 7px; background: linear-gradient(135deg, #16a34a, #15803d); color: #ffffff; border: none; box-shadow: 0 2px 5px rgba(22, 163, 74, 0.28); display: flex; align-items: center; justify-content: center; gap: 5px; cursor: pointer;">
+          <span></span><span>Cotización Grass</span>
+        </button>
+        <button type="button" class="btn-action net-btn" onclick="openNetQuotationModal()" style="margin: 0; padding: 9px 8px; font-size: 11px; font-weight: 700; border-radius: 7px; background: linear-gradient(135deg, #0ea5e9, #0284c7); color: #ffffff; border: none; box-shadow: 0 2px 5px rgba(14, 165, 233, 0.28); display: flex; align-items: center; justify-content: center; gap: 5px; cursor: pointer;">
+          <span></span><span>Cotizar Malla</span>
+        </button>
+      </div>
+
+      <!-- Grupo 2: Exportación de Planos -->
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 7px;">
+        <button type="button" class="btn-action primary" onclick="downloadImage()" style="margin: 0; padding: 8px; font-size: 11px; font-weight: 600; border-radius: 7px; background: #ffffff; color: #0f172a; border: 1px solid #cbd5e1; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05); display: flex; align-items: center; justify-content: center; gap: 5px; cursor: pointer;">
+          <span></span><span>Descargar PNG</span>
+        </button>
+        <button type="button" class="btn-action secondary" onclick="printCleanPdf()" style="margin: 0; padding: 8px; font-size: 11px; font-weight: 600; border-radius: 7px; background: #ffffff; color: #0f172a; border: 1px solid #cbd5e1; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05); display: flex; align-items: center; justify-content: center; gap: 5px; cursor: pointer;">
+          <span></span><span>Imprimir PDF</span>
+        </button>
+      </div>
+
+      <!-- Grupo 3: Acción Principal en la Nube (Neon PostgreSQL) -->
+      <button type="button" class="btn-action" onclick="guardarProyectoPrompt()" style="width: 100%; margin: 0; padding: 10px 12px; font-size: 12px; font-weight: 700; letter-spacing: 0.3px; border-radius: 8px; background: linear-gradient(135deg, #0f172a, #1e3a8a); color: #ffffff; border: 1px solid rgba(56, 189, 248, 0.45); box-shadow: 0 4px 10px rgba(15, 23, 42, 0.25); display: flex; align-items: center; justify-content: center; gap: 7px; cursor: pointer;">
+        <span></span><span>Guardar Proyecto en Nube</span>
+      </button>
+
     </div>
   </aside>
-
   <!-- Lienzo Principal -->
   <main>
     <div class="top-toolbar">
