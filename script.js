@@ -2004,14 +2004,24 @@ function actualizarBarraSesion() {
             : user.nombre.slice(0, 2).toUpperCase();
           avatarDiv.innerText = iniciales;
         }
-        bar.style.display = 'flex';
+        bar.style.setProperty('display', 'flex', 'important');
       }
       closeAuthModal();
     } catch (e) {
       openAuthModal();
     }
   } else {
-    if (bar) bar.style.display = 'none';
+    if (bar) bar.style.setProperty('display', 'none', 'important');
     openAuthModal();
   }
 }
+
+function cerrarSesionUsuario() {
+  localStorage.removeItem('token_sesion');
+  localStorage.removeItem('usuario_actual');
+  actualizarBarraSesion();
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+  actualizarBarraSesion();
+});
