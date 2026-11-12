@@ -1720,11 +1720,39 @@ async function registrarNuevoUsuario(nombre, email, password) {
     return false;
   }
 }
+/* =========================================================
+   CONEXIÓN CON BASE DE DATOS Y GESTIÓN DE USUARIOS
+   ========================================================= */
+const API_URL = 'https://backend-cadsport.onrender.com/api';
+
+// Registrar usuario
+async function registrarNuevoUsuario(nombre, email, password) {
+  try {
+    const respuesta = await fetch(`${API_URL}/usuarios/registro`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nombre, email, password })
+    });
+
+    const data = await respuesta.json();
+    if (!respuesta.ok) {
+      alert('Error: ' + data.error);
+      return false;
+    }
+
+    alert('¡Usuario registrado con éxito!');
+    return true;
+  } catch (err) {
+    console.error('Error de red:', err);
+    alert('No se pudo conectar con el servidor (si estaba dormido, espera 50 segundos e intenta de nuevo).');
+    return false;
+  }
+}
 
 // Iniciar sesión (Login)
 async function iniciarSesionUsuario(email, password) {
   try {
-    const respuesta = await fetch('http://localhost:3000/api/usuarios/login', {
+    const respuesta = await fetch(`${API_URL}/usuarios/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password })
@@ -1736,14 +1764,13 @@ async function iniciarSesionUsuario(email, password) {
       return false;
     }
 
-    // Guardar token en el navegador para mantener la sesión
     localStorage.setItem('token_sesion', data.token);
     localStorage.setItem('usuario_actual', JSON.stringify(data.usuario));
     alert('Bienvenido, ' + data.usuario.nombre);
     return true;
   } catch (err) {
     console.error('Error de red:', err);
-    alert('No se pudo conectar con el servidor.');
+    alert('No se pudo conectar con el servidor (si estaba dormido, espera 50 segundos e intenta de nuevo).');
     return false;
   }
 }
@@ -1757,7 +1784,7 @@ async function guardarProyectoEnBD(nombreProyecto) {
   }
 
   try {
-    const res = await fetch('http://localhost:3000/api/proyectos', {
+    const res = await fetch(`${API_URL}/proyectos`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -1765,20 +1792,23 @@ async function guardarProyectoEnBD(nombreProyecto) {
       },
       body: JSON.stringify({
         nombre: nombreProyecto,
-        configuracion: state // Guarda las medidas, sardinel, mallas y colores actuales
+        configuracion: state
       })
     });
 
     const data = await res.json();
     if (res.ok) {
-      alert('Plano deportivo guardado correctamente.');
+      alert('Plano deportivo guardado correctamente en Neon.');
     } else {
       alert('Error al guardar: ' + data.error);
     }
   } catch (e) {
     console.error('Error al guardar:', e);
+    alert('Error de conexión al guardar el plano.');
   }
 }
+
+
 /* =========================================================
    SOPORTE TÁCTIL MULTI-DISPOSITIVO (PAN + PINCH ZOOM iOS/ANDROID)
    ========================================================= */
