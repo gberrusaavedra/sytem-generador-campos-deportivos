@@ -1860,89 +1860,89 @@ setFieldColor = function(hex, btnId) {
   draw();
 };
 /* =========================================================
-   CONEXIÓN CON BASE DE DATOS Y GESTIÓN DE USUARIOS
+   CONTROL DEL MODAL DE SESIÓN Y BOTÓN GUARDAR EN BD
    ========================================================= */
-const API_URL = 'https://backend-cadsport.onrender.com/api';
+let isRegisterMode = false;
 
-// Registrar usuario
-async function registrarNuevoUsuario(nombre, email, password) {
-  try {
-    const respuesta = await fetch(`${API_URL}/usuarios/registro`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ nombre, email, password })
-    });
+function openAuthModal() {
+  const modal = document.getElementById('modal-auth');
+  if (modal) modal.classList.add('active');
+}
 
-    const data = await respuesta.json();
-    if (!respuesta.ok) {
-      alert('Error: ' + data.error);
-      return false;
-    }
+function closeAuthModal() {
+  const modal = document.getElementById('modal-auth');
+  if (modal) modal.classList.remove('active');
+}
 
-    alert('¡Usuario registrado con éxito!');
-    return true;
-  } catch (err) {
-    console.error('Error de red:', err);
-    alert('No se pudo conectar con el servidor (si estaba inactivo, espera 50 segundos e intenta de nuevo).');
-    return false;
+function toggleAuthMode() {
+  isRegisterMode = !isRegisterMode;
+  const title = document.getElementById('auth-title');
+  const nameGroup = document.getElementById('auth-name-group');
+  const submitBtn = document.getElementById('btn-auth-submit');
+  const toggleLink = document.getElementById('toggle-auth-link');
+
+  if (isRegisterMode) {
+    title.innerText = 'Crear Cuenta Nueva';
+    nameGroup.style.display = 'flex';
+    submitBtn.innerText = 'Registrarme';
+    toggleLink.innerText = '¿Ya tienes cuenta? Inicia sesión aquí';
+  } else {
+    title.innerText = 'Iniciar Sesión';
+    nameGroup.style.display = 'none';
+    submitBtn.innerText = 'Entrar';
+    toggleLink.innerText = '¿No tienes cuenta? Regístrate aquí';
   }
 }
 
-// Iniciar sesión (Login)
-async function iniciarSesionUsuario(email, password) {
-  try {
-    const respuesta = await fetch(`${API_URL}/usuarios/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password })
-    });
+async function submitAuthForm() {
+  const nombre = document.getElementById('auth-name').value.trim();
+  const email = document.getElementById('auth-email').value.trim();
+  const pass = document.getElementById('auth-pass').value.trim();
 
-    const data = await respuesta.json();
-    if (!respuesta.ok) {
-      alert('Error: ' + data.error);
-      return false;
-    }
-
-    localStorage.setItem('token_sesion', data.token);
-    localStorage.setItem('usuario_actual', JSON.stringify(data.usuario));
-    alert('Bienvenido, ' + data.usuario.nombre);
-    return true;
-  } catch (err) {
-    console.error('Error de red:', err);
-    alert('No se pudo conectar con el servidor (si estaba inactivo, espera 50 segundos e intenta de nuevo).');
-    return false;
-  }
-}
-
-// Guardar el proyecto/cancha actual en la BD
-async function guardarProyectoEnBD(nombreProyecto) {
-  const token = localStorage.getItem('token_sesion');
-  if (!token) {
-    alert('Debes iniciar sesión para guardar tus proyectos.');
+  if (!email || !pass) {
+    alert('Por favor ingresa tu correo y contraseña.');
     return;
   }
 
-  try {
-    const res = await fetch(`${API_URL}/proyectos`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify({
-        nombre: nombreProyecto,
-        configuracion: state
-      })
-    });
+  const btn = document.getElementById('btn-auth-submit');
+  const textoOriginal = btn.innerText;
+  btn.innerText = 'Conectando...';
+  btn.disabled = true;
 
-    const data = await res.json();
-    if (res.ok) {
-      alert('Plano deportivo guardado correctamente en Neon.');
+  try {
+    if (isRegisterMode) {
+      if (!nombre) {
+        alert('Por favor ingresa tu nombre completo.');
+        return;
+      }
+      const ok = await registrarNuevoUsuario(nombre, email, pass);
+      if (ok) {
+        // Inicia sesión automáticamente tras registrarse
+        const logged = await iniciarSesionUsuario(email, pass);
+        if (logged) closeAuthModal();
+      }
     } else {
-      alert('Error al guardar: ' + data.error);
+      const logged = await iniciarSesionUsuario(email, pass);
+      if (logged) closeAuthModal();
     }
-  } catch (e) {
-    console.error('Error al guardar:', e);
-    alert('Error de conexión al guardar el plano.');
+  } finally {
+    btn.innerText = textoOriginal;
+    btn.disabled = false;
   }
+}
+
+async function guardarProyectoPrompt() {
+  const token = localStorage.getItem('token_sesion');
+  if (!token) {
+    openAuthModal();
+    return;
+  }
+
+  const nombreProyecto = prompt(
+    'Ingresa un nombre para guardar este plano deportivo:',
+    `Cancha ${state.len}x${state.wid}m`
+  );
+  if (!nombreProyecto || !nombreProyecto.trim()) return;
+
+  await guardarProyectoEnBD(nombreProyecto.trim());
 }
