@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Plano CAD Deportivo Profesional - Grass Franjeado y Replanteo</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- Barra de Configuración Lateral -->
+  <aside>
+    <div class="header">
+      <h1>CAD Sport Replanteo Pro</h1>
+      <p>Grass franjeado, multicanchas, replanteo y cotas de trazado</p>
+    </div>
+    
+    <div class="content">
+      <!-- Panel de Autenticación de Usuario -->
+      <div class="sub-panel mb-8" style="background: #0f172a; border: 1px solid #334155; padding: 10px; border-radius: 8px;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <span id="user-display-name" style="color: #38bdf8; font-weight: bold; font-size: 11px;">👤 Sesión: Invitado</span>
+          <button type="button" class="btn" id="btn-user-auth" onclick="openAuthModal()" style="padding: 3px 8px; font-size: 10px;">Ingresar / Registro</button>
+        </div>
+      </div>
+
+      <!-- Distribución de canchas -->
+      <div>
+        <div class="section-title">Distribución de Canchas</div>
+        <div class="btn-grid">
+          <button class="btn active" id="btn-c1" onclick="setFieldsCount(1)">1 Cancha</button>
+          <button class="btn" id="btn-c2" onclick="setFieldsCount(2)">2 Canchas</button>
+          <button class="btn" id="btn-c3" onclick="setFieldsCount(3)">3 Canchas</button>
+        </div>
+      </div>
+
+      <!-- Presets reglamentarios -->
+      <div>
+        <div class="section-title">Plantillas Reglamentarias</div>
+        <div class="btn-grid">
+          <button class="btn active" id="p-fulbito" onclick="applyPreset('fulbito')">Losa 30x20</button>
+          <button class="btn" id="p-futsal" onclick="applyPreset('futsal')">Futsal 40x20</button>
+          <button class="btn" id="p-voley" onclick="applyPreset('voley')">Vóley 18x9</button>
+          <button class="btn" id="p-futbol11" onclick="applyPreset('futbol11')">Fútbol 11</button>
+          <button class="btn" id="p-balonmano" onclick="applyPreset('balonmano')">Balonmano</button>
+          <button class="btn" id="p-custom" onclick="applyPreset('custom')">Campo Personalizado</button>
+        </div>
+      </div>
+
+      <!-- Personalización de Césped Franjeado -->
+      <div id="section-grass-settings">
+        <div class="section-title text-green">Estilo de Césped Franjeado</div>
+        <div class="input-row">
+          <div class="form-group">
+            <label for="sel-grass-stripe">Ancho de Franja</label>
+            <select id="sel-grass-stripe" onchange="updateGrassConfig()">
+              <option value="2.5" selected>2.50 m (Fino)</option>
+              <option value="3.0">3.00 m (Estándar)</option>
+              <option value="4.0">4.00 m (Medio)</option>
+              <option value="5.0">5.00 m (Ancho)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="sel-grass-dir">Dirección del Corte</label>
+            <select id="sel-grass-dir" onchange="updateGrassConfig()">
+              <option value="vertical" selected>Vertical (Transversal)</option>
+              <option value="horizontal">Horizontal (Longitudinal)</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="sel-grass-tone">Tonalidad del Grass</label>
+          <select id="sel-grass-tone" onchange="updateGrassConfig()">
+            <option value="emerald" selected>Esmeralda Natural</option>
+            <option value="lime">Verde Claro / Losa Césped</option>
+            <option value="deep">Estadio Nocturno Oscuro</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- SECCIÓN CONFIGURACIÓN Y VISTA DE MALLA DEPORTIVA -->
+      <div>
+        <div class="section-title">CONFIGURACIÓN DE MALLA DEPORTIVA</div>
+        <div id="section-net-settings" class="sub-panel" style="background:#ffffff; border:1px solid #cbd5e1; padding:10px; border-radius:8px;">
+          <label class="checkbox-inner-label" style="font-weight:700; color:#0f172a; margin-bottom:8px;">
+            <input type="checkbox" id="chk-view-net" onchange="updateNetConfig()"> Ver Malla en Campo
+          </label>
+          
+          <div class="input-row">
+            <div class="form-group">
+              <label>Malla Perimétrica (Calibre N°):</label>
+              <select id="sel-net-gauge" onchange="updateNetConfig()">
+                <option value="36">N° 36</option>
+                <option value="72">N° 72</option>
+                <option value="96" selected>N° 96</option>
+                <option value="120">N° 120</option>
+                <option value="180">N° 180</option>
+                <option value="220">N° 220</option>
+                <option value="360">N° 360 (Ultra Pesada)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Malla de Techo (Calibre N°):</label>
+              <select id="sel-net-roof-gauge" onchange="updateNetConfig()">
+                <option value="26">N° 26</option>
+                <option value="36" selected>N° 36</option>
+                <option value="42">N° 42</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="input-row mt-6">
+            <div class="form-group">
+              <label>Abertura de Coco (Pulgadas):</label>
+              <select id="sel-net-coco" onchange="updateNetConfig()">
+                <option value="12">12 Pulgadas</option>
+                <option value="10" selected>10 Pulgadas</option>
+                <option value="8">8 Pulgadas</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Altura Perímetro (m):</label>
+              <input type="number" id="inp-net-height" value="6" step="0.5" oninput="updateNetConfig()">
+            </div>
+          </div>
+
+          <div class="form-group mt-6">
+            <label>Demasía Perimetral para Formar Cocos (%):</label>
+            <div class="btn-grid" style="grid-template-columns: repeat(5, 1fr); gap: 4px;">
+              <button type="button" class="btn" id="btn-pct-30" onclick="setNetSlack(0.30, 'btn-pct-30')">30%</button>
+              <button type="button" class="btn" id="btn-pct-35" onclick="setNetSlack(0.35, 'btn-pct-35')">35%</button>
+              <button type="button" class="btn active" id="btn-pct-40" onclick="setNetSlack(0.40, 'btn-pct-40')">40%</button>
+              <button type="button" class="btn" id="btn-pct-45" onclick="setNetSlack(0.45, 'btn-pct-45')">45%</button>
+              <button type="button" class="btn" id="btn-pct-50" onclick="setNetSlack(0.50, 'btn-pct-50')">50%</button>
+            </div>
+          </div>
+
+          <div class="input-row mt-6">
+            <div class="form-group">
+              <label>Precio Perímetro (S/ por ml):</label>
+              <input type="number" id="inp-net-price-linear" value="8.50" step="0.5" oninput="updateNetConfig()">
+            </div>
+            <div class="form-group">
+              <label>Precio Techo (S/ por m²):</label>
+              <input type="number" id="inp-net-price-roof" value="1.10" step="0.1" oninput="updateNetConfig()">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Unión de Canchas en Campo Mayor -->
+      <div id="section-join-fields">
+        <div class="section-title text-amber">Unir Canchas en Campo Mayor</div>
+        <label class="checkbox-item mb-8 bg-dark">
+          <input type="checkbox" id="chk-join-fields" onchange="updateJoinState()">
+          <span class="font-bold text-light">Superponer Trazado de Unión</span>
+        </label>
+
+        <div id="join-config">
+          <div class="form-group">
+            <label for="sel-join-mode">Tipo de Marcación de Unión</label>
+            <select id="sel-join-mode" onchange="draw()">
+              <option value="perimeter">Perímetro Envolvente Exterior</option>
+              <option value="transversal-field" selected>Campo Mayor Completo (con Centro y Arcos)</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="swatch-group-label">Color de Marcación de Unión</label>
+            <div class="color-swatch-group">
+              <div class="color-swatch-btn" id="jcol-white" onclick="setJoinColor('#ffffff', 'jcol-white')">
+                <span class="color-circle bg-white"></span>
+                <span class="color-name">Blanco</span>
+              </div>
+              <div class="color-swatch-btn" id="jcol-yellow" onclick="setJoinColor('#facc15', 'jcol-yellow')">
+                <span class="color-circle bg-yellow"></span>
+                <span class="color-name">Amarillo</span>
+              </div>
+              <div class="color-swatch-btn" id="jcol-blue" onclick="setJoinColor('#38bdf8', 'jcol-blue')">
+                <span class="color-circle bg-blue"></span>
+                <span class="color-name">Azul</span>
+              </div>
+              <div class="color-swatch-btn active" id="jcol-orange" onclick="setJoinColor('#fb923c', 'jcol-orange')">
+                <span class="color-circle bg-orange"></span>
+                <span class="color-name">Naranja</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Colores de Marcación -->
+      <div>
+        <div class="section-title">Color de Marcación Principal</div>
+        <div class="color-swatch-group">
+          <div class="color-swatch-btn" id="col-white" onclick="setFieldColor('#ffffff', 'col-white')">
+            <span class="color-circle bg-white"></span>
+            <span class="color-name">Blanco</span>
+          </div>
+          <div class="color-swatch-btn active" id="col-yellow" onclick="setFieldColor('#facc15', 'col-yellow')">
+            <span class="color-circle bg-yellow"></span>
+            <span class="color-name">Amarillo</span>
+          </div>
+          <div class="color-swatch-btn" id="col-blue" onclick="setFieldColor('#38bdf8', 'col-blue')">
+            <span class="color-circle bg-blue"></span>
+            <span class="color-name">Azul</span>
+          </div>
+          <div class="color-swatch-btn" id="col-orange" onclick="setFieldColor('#fb923c', 'col-orange')">
+            <span class="color-circle bg-orange"></span>
+            <span class="color-name">Naranja</span>
+          </div>
+        </div>
+
+        <div class="section-title mt-10">Color de Trazado de Vóley</div>
+        <div class="color-swatch-group">
+          <div class="color-swatch-btn" id="vcol-white" onclick="setVoleyColor('#ffffff', 'vcol-white')">
+            <span class="color-circle bg-white"></span>
+            <span class="color-name">Blanco</span>
+          </div>
+          <div class="color-swatch-btn" id="vcol-yellow" onclick="setVoleyColor('#facc15', 'vcol-yellow')">
+            <span class="color-circle bg-yellow"></span>
+            <span class="color-name">Amarillo</span>
+          </div>
+          <div class="color-swatch-btn active" id="vcol-blue" onclick="setVoleyColor('#38bdf8', 'vcol-blue')">
+            <span class="color-circle bg-blue"></span>
+            <span class="color-name">Azul</span>
+          </div>
+          <div class="color-swatch-btn" id="vcol-orange" onclick="setVoleyColor('#fb923c', 'vcol-orange')">
+            <span class="color-circle bg-orange"></span>
+            <span class="color-name">Naranja</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Espesor de Líneas -->
+      <div>
+        <div class="section-title">Espesor de Líneas de Marcación</div>
+        <div class="input-row">
+          <div class="form-group">
+            <label for="inp-line-w">Ancho de Trazado (cm)</label>
+            <input type="number" id="inp-line-w" value="8" min="2" max="25" step="1" oninput="updateDims()">
+          </div>
+          <div class="form-group">
+            <label for="sel-line-w">Valores Típicos</label>
+            <select id="sel-line-w" onchange="applyLineWidthPreset(this.value)">
+              <option value="5">5 cm (Vóley / Mínimo)</option>
+              <option value="8" selected>8 cm (Losa / Futsal)</option>
+              <option value="10">10 cm (Polideportivo)</option>
+              <option value="12">12 cm (Fútbol 11 FIFA)</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Dimensiones del Campo -->
+      <div>
+        <div class="section-title">Dimensiones del Campo (Metros)</div>
+        <div class="input-row">
+          <div class="form-group">
+            <label for="inp-len">Largo de Juego (m)</label>
+            <input type="number" id="inp-len" value="30" step="0.5" oninput="updateDims()">
+          </div>
+          <div class="form-group">
+            <label for="inp-wid">Ancho de Juego (m)</label>
+            <input type="number" id="inp-wid" value="20" step="0.5" oninput="updateDims()">
+          </div>
+        </div>
+
+        <!-- Área Grande / Penal -->
+        <div class="sub-panel">
+          <label class="checkbox-inner-label">
+            <input type="checkbox" id="chk-has-big-area" checked onchange="toggleAreaInputs()">
+            <span class="font-bold text-accent">Área Grande / Penal</span>
+          </label>
+          <div id="wrap-big-area" class="input-row">
+            <div class="form-group">
+              <label for="inp-area-len">Profundidad (m)</label>
+              <input type="number" id="inp-area-len" value="6.0" step="0.5" oninput="updateDims()">
+            </div>
+            <div class="form-group">
+              <label for="inp-area-wid">Ancho Frontal (m)</label>
+              <input type="number" id="inp-area-wid" value="12.0" step="0.5" oninput="updateDims()">
+            </div>
+          </div>
+        </div>
+
+        <!-- Área Chica / Meta -->
+        <div class="sub-panel">
+          <label class="checkbox-inner-label">
+            <input type="checkbox" id="chk-has-small-area" onchange="toggleAreaInputs()">
+            <span class="font-bold text-green">Área Chica / Meta (Fútbol 11 / Opcional)</span>
+          </label>
+          <div id="wrap-small-area" class="input-row hidden">
+            <div class="form-group">
+              <label for="inp-small-len">Profundidad Chica (m)</label>
+              <input type="number" id="inp-small-len" value="5.5" step="0.5" oninput="updateDims()">
+            </div>
+            <div class="form-group">
+              <label for="inp-small-wid">Ancho Frontal Chica (m)</label>
+              <input type="number" id="inp-small-wid" value="18.32" step="0.5" oninput="updateDims()">
+            </div>
+          </div>
+        </div>
+
+        <!-- Arco de Penalización -->
+        <div class="sub-panel">
+          <label class="checkbox-inner-label">
+            <input type="checkbox" id="chk-has-penalty-arc" onchange="togglePenaltyArcInputs()">
+            <span class="font-bold text-amber">Arco de Penalización (Media Luna del Área)</span>
+          </label>
+          <div id="wrap-penalty-arc" class="input-row hidden">
+            <div class="form-group">
+              <label for="inp-penalty-arc-r">Radio del Arco (m)</label>
+              <input type="number" id="inp-penalty-arc-r" value="9.15" step="0.25" oninput="updateDims()">
+            </div>
+            <div class="form-group">
+              <label>Valores Típicos</label>
+              <select onchange="document.getElementById('inp-penalty-arc-r').value=this.value; updateDims();">
+                <option value="9.15" selected>9.15 m (Fútbol 11 FIFA)</option>
+                <option value="6.00">6.00 m (Futsal / Cancha 7)</option>
+                <option value="5.00">5.00 m (Losa / Reducido)</option>
+                <option value="3.00">3.00 m (Proporcional chico)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Penal y Centro -->
+        <div class="input-row mt-6">
+          <div class="form-group">
+            <label for="inp-penal">Punto Penal (m)</label>
+            <input type="number" id="inp-penal" value="6.0" step="0.5" oninput="updateDims()">
+          </div>
+          <div class="form-group">
+            <label for="inp-circ">Radio Rotonda Centro (m)</label>
+            <input type="number" id="inp-circ" value="3.0" step="0.5" oninput="updateDims()">
+          </div>
+        </div>
+        <div class="input-row">
+          <div class="form-group">
+            <label for="inp-goal-w">Ancho Arco/Portería (m)</label>
+            <input type="number" id="inp-goal-w" value="3.0" step="0.2" oninput="updateDims()">
+          </div>
+          <div class="form-group">
+            <label for="inp-corner-r">Radio Córner (m)</label>
+            <input type="number" id="inp-corner-r" value="1.0" step="0.1" oninput="updateDims()">
+          </div>
+        </div>
+        <div class="form-group hidden" id="group-gap">
+          <label for="inp-gap">Pasillo de División entre Canchas (m)</label>
+          <input type="number" id="inp-gap" value="3.0" step="0.5" oninput="updateDims()">
+        </div>
+
+        <!-- CONFIGURACIÓN DE SARDINEL Y RETIROS DIFERENCIADOS -->
+        <div class="sub-panel mt-6">
+          <label class="checkbox-inner-label">
+            <input type="checkbox" id="chk-has-sardinel" onchange="updateDims()">
+            <span class="font-bold text-accent">Sardinel y Retiro Perimetral (Grass Total)</span>
+          </label>
+          <div id="wrap-sardinel" class="input-row mt-6" style="display: none; grid-template-columns: 1fr 1fr 1fr;">
+            <div class="form-group">
+              <label for="inp-sardinel-sep-fondos">Fondos/Arcos (m)</label>
+              <input type="number" id="inp-sardinel-sep-fondos" value="2.00" step="0.1" min="0" oninput="updateDims()" title="Retiro detrás de las porterías">
+            </div>
+            <div class="form-group">
+              <label for="inp-sardinel-sep-laterales">Laterales/Bandas (m)</label>
+              <input type="number" id="inp-sardinel-sep-laterales" value="1.00" step="0.1" min="0" oninput="updateDims()" title="Retiro a los costados">
+            </div>
+            <div class="form-group">
+              <label for="inp-sardinel-w">Ancho Sardinel (cm)</label>
+              <input type="number" id="inp-sardinel-w" value="15" step="1" min="5" oninput="updateDims()" title="Espesor del sardinel de concreto">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Trazado de Vóley -->
+      <div>
+        <div class="section-title">Polideportivo / Cancha de Vóley</div>
+        <label class="checkbox-item">
+          <input type="checkbox" id="chk-voley" checked onchange="updateDims()">
+          <span>Superponer Vóley (Líneas 3.00 y 6.00)</span>
+        </label>
+        <div id="voley-config" class="mt-6">
+          <div class="input-row">
+            <div class="form-group">
+              <label for="inp-voley-len">Largo Vóley (m)</label>
+              <input type="number" id="inp-voley-len" value="18" step="1" oninput="updateDims()">
+            </div>
+            <div class="form-group">
+              <label for="inp-voley-wid">Ancho Vóley (m)</label>
+              <input type="number" id="inp-voley-wid" value="9" step="1" oninput="updateDims()">
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="inp-voley-atk">Línea de Ataque desde Red (m)</label>
+            <input type="number" id="inp-voley-atk" value="3.0" step="0.5" oninput="updateDims()">
+          </div>
+        </div>
+      </div>
+
+      <!-- Capas de Cotas Visibles -->
+      <div>
+        <div class="section-title">Visibilidad de Cotas y Replanteo</div>
+        <div class="checkbox-stack">
+          <label class="checkbox-item">
+            <input type="checkbox" id="chk-ext-dims" checked onchange="draw()">
+            <span>Cadenas Exteriores (Largo y Ancho)</span>
+          </label>
+          <label class="checkbox-item">
+            <input type="checkbox" id="chk-line-dim" checked onchange="draw()">
+            <span class="font-bold text-accent">Cota de Espesor de Línea (en Campo)</span>
+          </label>
+          <label class="checkbox-item">
+            <input type="checkbox" id="chk-area-dims" checked onchange="draw()">
+            <span>Cotas de Área Grande (Prof., Ancho y Penal)</span>
+          </label>
+          <label class="checkbox-item">
+            <input type="checkbox" id="chk-small-area-dims" checked onchange="draw()">
+            <span>Cotas de Área Chica (Prof. y Ancho)</span>
+          </label>
+          <label class="checkbox-item">
+            <input type="checkbox" id="chk-pen-arc-dims" checked onchange="draw()">
+            <span>Cota de Arco de Penalización (Radio R)</span>
+          </label>
+          <label class="checkbox-item">
+            <input type="checkbox" id="chk-goal-dims" checked onchange="draw()">
+            <span>Cota de Abertura de Arco</span>
+          </label>
+          <label class="checkbox-item">
+            <input type="checkbox" id="chk-corner-dims" checked onchange="draw()">
+            <span>Cota de Tiro de Esquina (Córner)</span>
+          </label>
+          <label class="checkbox-item">
+            <input type="checkbox" id="chk-rot-dims" checked onchange="draw()">
+            <span>Cota de Rotonda Central (Radio)</span>
+          </label>
+          <label class="checkbox-item">
+            <input type="checkbox" id="chk-voley-dims" checked onchange="draw()">
+            <span>Cotas de Vóley (3.00, 6.00 y 9.00)</span>
+          </label>
+          <label class="checkbox-item">
+            <input type="checkbox" id="chk-diag" checked onchange="draw()">
+            <span>Diagonal de Replanteo (Escuadra)</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Cómputos Métricos -->
+      <div>
+        <div class="section-title">Cómputo Métrico Automático</div>
+        <div class="metrics">
+          <div class="metric-box">
+            <div>ÁREA TOTAL GRASS</div>
+            <div id="met-area">600.00 m²</div>
+          </div>
+          <div class="metric-box">
+            <div>PERÍMETRO SARDINEL</div>
+            <div id="met-perim">100.00 m</div>
+          </div>
+          <div class="metric-box">
+            <div>DIAGONAL UNITARIA</div>
+            <div id="met-diag">36.06 m</div>
+          </div>
+          <div class="metric-box">
+            <div>PINTURA LINEAL</div>
+            <div id="met-paint">201.3 m</div>
+          </div>
+          <div class="metric-box col-span-2">
+            <div>ÁREA DE PINTURA (ANCHO LÍNEA)</div>
+            <div id="met-paint-area" class="text-green">16.10 m²</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Botones de Acción -->
+    <div class="actions">
+      <button class="btn-action quotation-btn" onclick="openQuotationModal()">📋 Formato de Cotización</button>
+      <button class="btn-action primary" onclick="downloadImage()">Descargar PNG</button>
+      <button class="btn-action secondary" onclick="printCleanPdf()">Imprimir PDF Plano</button>
+      <button type="button" class="btn-action net-btn" onclick="openNetQuotationModal()">🕸️ Cotización de Malla</button>
+      <button type="button" class="btn-action" onclick="guardarProyectoPrompt()" style="background:#0284c7;">💾 Guardar en Base de Datos</button>
+    </div>
+  </aside>
+
+  <!-- Lienzo Principal -->
+  <main>
+    <div class="top-toolbar">
+      <div class="theme-toggle">
+        <button class="theme-btn" id="th-cad" onclick="setTheme('cad')">Blueprint CAD</button>
+        <button class="theme-btn active" id="th-grass" onclick="setTheme('grass')">Césped Franjeado</button>
+        <button class="theme-btn" id="th-light" onclick="setTheme('light')">Plano Blanco</button>
+        <button class="theme-btn" id="th-court" onclick="setTheme('court')">Losa Acrílica</button>
+      </div>
+      <div class="zoom-ctrls">
+        <button class="zoom-btn" onclick="zoomIn()">+</button>
+        <span id="zoom-val">100%</span>
+        <button class="zoom-btn" onclick="zoomOut()">-</button>
+        <button class="zoom-btn btn-auto" onclick="resetFit()">Ajustar</button>
+      </div>
+    </div>
+
+    <div class="canvas-container" id="container">
+      <canvas id="cv"></canvas>
+    </div>
+  </main>
+
+  <!-- MODAL DE AUTENTICACIÓN / CREAR USUARIO (CONEXIÓN BD) -->
+  <div id="modal-auth" class="modal-overlay">
+    <div class="modal-window" style="max-width: 420px; border-radius: 12px; overflow: hidden; background: #ffffff;">
+      <div class="modal-bar" style="background: #0f172a; padding: 12px 18px;">
+        <h2 id="auth-title" style="color: #38bdf8; font-size: 14px; margin: 0;">Iniciar Sesión</h2>
+        <button class="btn-close-quote" onclick="closeAuthModal()">✕</button>
+      </div>
+      <div style="padding: 20px;">
+        <div id="auth-name-group" class="form-group mb-8" style="display: none;">
+          <label style="color: #334155; font-size: 11px; font-weight: bold;">Nombre Completo:</label>
+          <input type="text" id="auth-name" class="tbl-input" placeholder="Ej: Juan Pérez">
+        </div>
+        <div class="form-group mb-8">
+          <label style="color: #334155; font-size: 11px; font-weight: bold;">Correo Electrónico:</label>
+          <input type="email" id="auth-email" class="tbl-input" placeholder="usuario@empresa.pe">
+        </div>
+        <div class="form-group mb-8">
+          <label style="color: #334155; font-size: 11px; font-weight: bold;">Contraseña:</label>
+          <input type="password" id="auth-pass" class="tbl-input" placeholder="••••••••">
+        </div>
+
+        <div style="display: flex; gap: 8px; margin-top: 16px;">
+          <button type="button" class="btn-action primary" id="btn-auth-submit" onclick="submitAuthForm()" style="flex: 1;">Entrar</button>
+        </div>
+        <div style="text-align: center; margin-top: 12px;">
+          <a href="javascript:void(0)" id="toggle-auth-link" onclick="toggleAuthMode()" style="color: #0284c7; font-size: 11px; font-weight: 600; text-decoration: none;">¿No tienes cuenta? Regístrate aquí</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL DE COTIZACIÓN DE GRASS / PRINCIPAL (100% EDITABLE, MULTI-FILA Y AUTO-EXPANSIÓN) -->
+  <div id="modal-quotation" class="modal-overlay">
+    <div class="modal-window">
+      <div class="modal-bar">
+        <div class="modal-title-group">
+          <h2>📄 Formato de Cotización (Plantilla en Blanco Editable)</h2>
+          <span class="modal-hint">Ingresa o edita los datos directamente sobre los campos. Los totales se calcularán de inmediato.</span>
+        </div>
+        <div class="modal-bar-actions">
+          <button class="btn-tool-quote" onclick="addQuoteRow()">➕ Fila</button>
+          <button class="btn-tool-quote secondary" onclick="clearQuotationFields()">🧹 Limpiar</button>
+          <button class="btn-print-quote" onclick="printQuotationOnly()">🖨️ Imprimir</button>
+          <button class="btn-close-quote" onclick="closeQuotationModal()">✕</button>
+        </div>
+      </div>
+
+      <div class="quote-sheet-wrapper">
+        <div class="quote-paper" id="quote-printable">
+          <div class="quote-header-shape"></div>
+
+          <div class="quote-header-content">
+            <div class="quote-brand">
+              <div class="brand-badge" id="logo-badge" onclick="document.getElementById('input-logo-file').click()" title="Haz clic para subir tu propio logo" style="cursor: pointer;">
+                <div id="badge-default-text">
+                  <span class="badge-sub">TECNOLOGÍA PARA EL DEPORTE</span>
+                  <span class="badge-main">Romero Castillo grass</span>
+                  <span class="badge-country">PERÚ</span>
+                </div>
+                <img id="badge-custom-img" style="display: none; max-width: 100%; max-height: 52px; object-fit: contain;" alt="Logo" />
+                <input type="file" id="input-logo-file" accept="image/*" style="display: none;" onchange="cargarLogoCotizacion(event)">
+              </div>
+            </div>
+
+            <div class="quote-company-info">
+              <input type="text" class="edit-ghost text-right bold" value="Mz. M Lt. E10 - Residencial Los Sauces" placeholder="Dirección...">
+              <input type="text" class="edit-ghost text-right" value="Puente Piedra - Lima, Perú" placeholder="Ciudad, País...">
+              <input type="text" class="edit-ghost text-right company-url" value="www.tecnograssperu.com" placeholder="Web...">
+              <input type="text" class="edit-ghost text-right" value="+51 483 7366 / +51 955 241 191" placeholder="Teléfonos...">
+              <input type="text" class="edit-ghost text-right" value="ventas@tecnograssperu.com" placeholder="Correo...">
+            </div>
+          </div>
+
+          <div class="quote-meta-row">
+            <div class="meta-dates-band">
+              <div class="meta-input-wrap">
+                <label>Fecha:</label>
+                <input type="text" id="q-date" class="edit-band" placeholder="DD/MM/AAAA">
+              </div>
+              <div class="meta-input-wrap">
+                <label>Cotización N°:</label>
+                <input type="text" id="q-code" class="edit-band" value="ITPDEP-2303211048" placeholder="Ej: ITPDEP-2303211048">
+              </div>
+            </div>
+            <div class="meta-title">COTIZACIÓN</div>
+          </div>
+
+          <div class="quote-parties-grid">
+            <div class="party-col">
+              <div class="party-lbl">Cotizado a:</div>
+              <input type="text" class="edit-underlined font-bold" placeholder="Municipalidad / Empresa / Cliente...">
+              <input type="text" class="edit-underlined" placeholder="Lugar / Dirección de entrega...">
+              <input type="text" class="edit-underlined" placeholder="RUC / DNI / Contacto...">
+            </div>
+            <div class="party-col">
+              <div class="party-lbl">Cotizado por:</div>
+              <input type="text" class="edit-underlined font-bold" placeholder="Asesor Comercial...">
+              <input type="text" class="edit-underlined" placeholder="Correo...">
+              <input type="text" class="edit-underlined" placeholder="Celular / WhatsApp...">
+            </div>
+            <div class="party-sample">
+              <div class="sample-box">
+                <div class="sample-grass-view">
+                  <div class="grass-fiber g1"></div>
+                  <div class="grass-fiber g2"></div>
+                  <div class="grass-fiber g1"></div>
+                  <div class="grass-fiber g2"></div>
+                  <div class="grass-fiber g1"></div>
+                </div>
+                <span>Muestra Grass 50mm</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="quote-dims-box">
+            <div class="dim-item">
+              <span class="d-title">Ancho Total (Grass):</span>
+              <input type="text" id="q-dim-wid" class="edit-dim" placeholder="20.00 m">
+            </div>
+            <div class="dim-item">
+              <span class="d-title">Largo Total (Grass):</span>
+              <input type="text" id="q-dim-len" class="edit-dim" placeholder="30.00 m">
+            </div>
+            <div class="dim-item dim-total">
+              <span class="d-title">Área Total Cubierta:</span>
+              <input type="text" id="q-dim-area" class="edit-dim font-bold text-white" placeholder="600.00 m²">
+            </div>
+          </div>
+
+          <!-- TABLA EDITABLE CON PARTIDAS DE GRASS -->
+          <table class="quote-table" id="quote-items-table">
+            <thead>
+              <tr>
+                <th style="width: 11%;">Cantidad</th>
+                <th style="width: 15%;">Modelo / Ítem</th>
+                <th style="width: 40%;">Descripción Técnica Detallada</th>
+                <th style="width: 10%;">Peso / Med.</th>
+                <th style="width: 11%;">Prec. Uni ($)</th>
+                <th style="width: 11%;">Importe Total</th>
+                <th style="width: 2%; text-align: center;"></th>
+              </tr>
+            </thead>
+            <tbody id="quote-tbody">
+              <!-- Filas editables generadas dinámicamente -->
+            </tbody>
+          </table>
+
+          <div class="quote-footer-grid">
+            <div class="bcp-bank-card">
+              <div class="bcp-logo-badge">
+                <span class="bcp-bars">››</span> BCP
+              </div>
+              <div class="bcp-details">
+                <div class="bcp-line">
+                  <strong>CUENTA CORRIENTE BCP Soles N°:</strong>
+                  <input type="text" class="edit-ghost bold" value="191-2516594-0-40">
+                </div>
+                <div class="bcp-line">
+                  <strong>CUENTA CORRIENTE BCP Dólares N°:</strong>
+                  <input type="text" class="edit-ghost bold" value="191-2516611-1-22">
+                </div>
+                <div class="bcp-titular">
+                  <strong>Titular:</strong>
+                  <input type="text" class="edit-ghost" value="Importaciones Tecnograss Perú S.A.C.">
+                </div>
+              </div>
+            </div>
+
+            <div class="quote-totals-box">
+              <div class="tot-row">
+                <span>SUB-TOTAL</span>
+                <div class="tot-val-wrap">$ <input type="number" id="inp-q-subtotal" class="tot-edit" step="0.01" placeholder="0.00" oninput="calcQuotationTotalsManual()"></div>
+              </div>
+              <div class="tot-row">
+                <span>I.G.V. (18%)</span>
+                <div class="tot-val-wrap">$ <input type="number" id="inp-q-igv" class="tot-edit" step="0.01" placeholder="0.00" oninput="calcQuotationTotalsManual()"></div>
+              </div>
+              <div class="tot-row tot-highlight">
+                <span>TOTAL</span>
+                <div class="tot-val-wrap">$ <input type="number" id="inp-q-total-usd" class="tot-edit text-white bold" step="0.01" placeholder="0.00"></div>
+              </div>
+              <div class="tot-row tot-tc">
+                <span>TIPO DE CAMBIO</span>
+                <div class="tot-val-wrap">S/ <input type="number" id="inp-q-tc" class="tot-edit" step="0.01" value="3.70" oninput="calcQuotationTotals()"></div>
+              </div>
+              <div class="tot-row tot-soles">
+                <span>TOTAL</span>
+                <div class="tot-val-wrap">S/ <input type="number" id="inp-q-total-pen" class="tot-edit text-green bold" step="0.01" placeholder="0.00"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="quote-validity-bar">
+            <span>Cotización válida hasta:</span>
+            <input type="text" class="edit-validity" placeholder="DD/MM/AAAA (Ej: 22/04/2026)">
+          </div>
+
+          <div class="quote-gifts-footer">
+            <input type="text" class="edit-ghost bold text-dark" value="Obsequios de Tecnograss Peru">
+            <textarea class="edit-textarea-gifts" rows="2" placeholder="Chalecos Deportivos, Pelotas, Banner publicitarios..."></textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL DE COTIZACIÓN DE MALLA DEPORTIVA (7 COLUMNAS Y AUTO-EXPANSIÓN) -->
+  <div id="modal-net-quotation" class="modal-overlay">
+    <div class="modal-window">
+      <div class="modal-bar">
+        <div class="modal-title-group">
+          <h2>COTIZACIÓN DE SISTEMA DE REDES Y MALLAS DE PROTECCIÓN</h2>
+          <span class="modal-hint">Formato técnico editable: mallas perimetrales (ml), techo (m²), postes, cables y accesorios</span>
+        </div>
+        <div class="modal-bar-actions">
+          <button class="btn-tool-quote" onclick="addNetQuoteRow()">➕ Fila</button>
+          <button class="btn-tool-quote secondary" onclick="clearNetQuotationFields()">🧹 Limpiar</button>
+          <button class="btn-print-quote" onclick="printNetQuotationOnly()">🖨️ Imprimir</button>
+          <button class="btn-close-quote" onclick="closeNetQuotationModal()">✕</button>
+        </div>
+      </div>
+      <div class="quote-sheet-wrapper">
+        <div class="quote-paper" id="net-quote-printable">
+          <div class="quote-header-shape" style="background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);"></div>
+          
+          <div class="quote-header-content">
+            <div class="brand-badge" id="net-logo-badge" onclick="document.getElementById('input-net-logo-file').click()" title="Haz clic para subir tu propio logo" style="background: linear-gradient(180deg, #0369a1 0%, #082f49 100%); border-color: #38bdf8; cursor: pointer;">
+              <div id="net-badge-default-text">
+                <span class="badge-sub">COBERTURA & PROTECCIÓN</span>
+                <span class="badge-main">SISTEMAS DE MALLAS</span>
+                <span class="badge-country">PERÚ</span>
+              </div>
+              <img id="net-badge-custom-img" style="display: none; max-width: 100%; max-height: 52px; object-fit: contain;" alt="Logo" />
+              <input type="file" id="input-net-logo-file" accept="image/*" style="display: none;" onchange="cargarLogoCotizacionMalla(event)">
+            </div>
+            <div class="quote-company-info">
+              <input type="text" class="edit-ghost text-right bold" value="Mz. M Lt. 24 Los Cedros" placeholder="Dirección..." />
+              <input type="text" class="edit-ghost text-right" value="Piura, Perú" placeholder="Ciudad, País..." />
+              <input type="text" class="edit-ghost text-right company-url" value="ventas@mallasdeportivas.pe" placeholder="Web..." />
+              <input type="text" class="edit-ghost text-right" value="+51 987 654 321" placeholder="Teléfono..." />
+            </div>
+          </div>
+
+          <div class="quote-meta-row">
+            <div class="meta-dates-band" style="background: #0c4a6e;">
+              <div class="meta-input-wrap">
+                <label>Fecha:</label>
+                <input type="text" id="net-q-date" class="edit-band" style="width: 85px;" placeholder="DD/MM/AAAA" />
+              </div>
+              <div class="meta-input-wrap">
+                <label>Cotización N°:</label>
+                <input type="text" class="edit-band" value="COT-MAL-2026-001" style="width: 130px;" />
+              </div>
+            </div>
+            <h1 class="meta-title">COTIZACIÓN</h1>
+          </div>
+
+          <!-- Datos del cliente editables -->
+          <div class="quote-parties-grid">
+            <div class="party-col">
+              <div class="party-lbl">Cotizado a:</div>
+              <input type="text" class="edit-underlined font-bold" placeholder="Municipalidad / Empresa / Cliente...">
+              <input type="text" class="edit-underlined" placeholder="Lugar / Dirección de instalación...">
+              <input type="text" class="edit-underlined" placeholder="RUC / DNI / Contacto...">
+            </div>
+            <div class="party-col">
+              <div class="party-lbl">Cotizado por:</div>
+              <input type="text" class="edit-underlined font-bold" placeholder="Especialista en Redes Deportivas...">
+              <input type="text" class="edit-underlined" placeholder="Correo...">
+              <input type="text" class="edit-underlined" placeholder="Celular / WhatsApp...">
+            </div>
+            <div class="party-sample">
+              <div class="sample-box" style="background:#f0f9ff; color:#0369a1; border-color:#bae6fd;">
+                <div style="font-size:16px; margin-bottom:2px;">🕸️</div>
+                <span>Mallas con Filtro UV Certificado</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Indicadores de dimensiones técnicas -->
+          <div class="quote-dims-box">
+            <div class="dim-item"><span class="d-title">Perímetro Sardinel:</span> <input type="text" id="net-q-perim" class="edit-dim" readonly></div>
+            <div class="dim-item"><span class="d-title">Techo Final:</span> <input type="text" id="net-q-roof-area" class="edit-dim" readonly></div>
+            <div class="dim-item"><span class="d-title">Perímetro con Demasía:</span> <input type="text" id="net-q-side-area" class="edit-dim" readonly></div>
+            <div class="dim-item dim-total" style="background: #0284c7;"><span class="d-title">Total Presupuesto:</span> <input type="text" id="net-q-total-area" class="edit-dim" readonly></div>
+          </div>
+
+          <!-- Tabla técnica de partidas editable con 7 columnas -->
+          <table class="quote-table">
+            <thead>
+              <tr>
+                <th style="width: 10%;">Cant.</th>
+                <th style="width: 7%;">Unid.</th>
+                <th style="width: 15%;">Ítem / Calibre</th>
+                <th style="width: 38%;">Especificación Técnica del Material / Partida</th>
+                <th style="width: 8%;">Cocos</th>
+                <th style="width: 11%;">P. Unit (S/)</th>
+                <th style="width: 11%;">Subtotal (S/)</th>
+                <th style="width: 2%; text-align: center;"></th>
+              </tr>
+            </thead>
+            <tbody id="net-quote-tbody">
+              <!-- Partidas editables generadas dinámicamente -->
+            </tbody>
+          </table>
+
+          <div class="quote-footer-grid">
+            <div class="bcp-bank-card">
+              <div class="bcp-logo-badge">BCP<span class="bcp-bars">//</span></div>
+              <div class="bcp-details">
+                <div class="bcp-line font-bold">Cuenta Corriente BCP Soles: 475-9201938-0-12</div>
+                <div class="bcp-line">CCI: 002-475-009201938012-28</div>
+                <div class="bcp-titular">Titular: PROVEEDORA DE MALLAS & REDES PERÚ S.A.C.</div>
+              </div>
+            </div>
+            <div class="quote-totals-box">
+              <div class="tot-row"><span>SUBTOTAL:</span><div class="tot-val-wrap"><span>S/</span><input type="text" id="net-tot-sub" class="tot-edit" readonly></div></div>
+              <div class="tot-row"><span>IGV (18%):</span><div class="tot-val-wrap"><span>S/</span><input type="text" id="net-tot-igv" class="tot-edit" readonly></div></div>
+              <div class="tot-row tot-highlight" style="background: #0284c7;"><span>TOTAL NETO:</span><div class="tot-val-wrap"><span>S/</span><input type="text" id="net-tot-total" class="tot-edit" readonly></div></div>
+            </div>
+          </div>
+
+          <div class="quote-validity-bar" style="background: #0284c7;">
+            <span>Garantía y Condiciones:</span>
+            <input type="text" class="edit-validity" value="Redes de polietileno de alta densidad tratadas contra rayos UV con 3 años de garantía." />
+          </div>
+
+          <div class="quote-gifts-footer" style="border-color:#38bdf8; background:#f0f9ff;">
+            <input type="text" class="edit-ghost bold text-dark" value="Notas y Servicios Adicionales Incluidos:" />
+            <textarea class="edit-textarea-gifts" rows="2" style="color:#0369a1;" placeholder="Incluye accesorios de fijación, cables tensores perimetrales y templadores de acero..."></textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="print-container">
+    <img id="print-canvas" alt="Plano Técnico Deportivo">
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
