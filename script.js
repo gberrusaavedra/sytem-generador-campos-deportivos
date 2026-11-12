@@ -2169,21 +2169,3 @@ actualizarBarraSesion();
   `;
   document.body.appendChild(btn);
 })();
-(function () {
-  const rutaBase = "/sytem-generador-campos-deportivos/";
-
-  function limpiarUrl() {
-    if (
-      window.location.pathname !== rutaBase ||
-      window.location.search ||
-      window.location.hash
-    ) {
-      window.history.replaceState({}, document.title, rutaBase);
-    }
-  }
-
-  limpiarUrl();
-  document.addEventListener("DOMContentLoaded", limpiarUrl);
-  window.addEventListener("hashchange", limpiarUrl);
-  window.addEventListener("popstate", limpiarUrl);
-})();
