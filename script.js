@@ -1849,3 +1849,13 @@ async function guardarProyectoEnBD(nombreProyecto) {
     }, 200);
   });
 })();
+/* =========================================================
+   CORRECCIÓN DE SELECCIÓN ÚNICA EN COLOR DE MARCACIÓN PRINCIPAL
+   ========================================================= */
+setFieldColor = function(hex, btnId) {
+  state.lineColorField = hex;
+  document.querySelectorAll('#col-white, #col-yellow, #col-blue, #col-orange').forEach(b => b.classList.remove('active'));
+  const btn = document.getElementById(btnId);
+  if (btn) btn.classList.add('active');
+  draw();
+};
