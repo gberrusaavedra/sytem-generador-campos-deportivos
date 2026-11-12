@@ -1949,11 +1949,17 @@ async function submitAuthForm() {
       if (ok) {
         // Inicia sesión automáticamente tras registrarse
         const logged = await iniciarSesionUsuario(email, pass);
-        if (logged) closeAuthModal();
+      if (logged) {
+          closeAuthModal();
+          actualizarBarraSesion();
+        }
       }
     } else {
       const logged = await iniciarSesionUsuario(email, pass);
-      if (logged) closeAuthModal();
+      if (logged) {
+        closeAuthModal();
+        actualizarBarraSesion();
+      }
     }
   } finally {
     btn.innerText = textoOriginal;
