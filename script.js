@@ -1779,3 +1779,73 @@ async function guardarProyectoEnBD(nombreProyecto) {
     console.error('Error al guardar:', e);
   }
 }
+/* =========================================================
+   SOPORTE TÁCTIL MULTI-DISPOSITIVO (PAN + PINCH ZOOM iOS/ANDROID)
+   ========================================================= */
+(function initResponsiveTouchAndResize() {
+  let initialPinchDist = null;
+  let initialZoom = 1;
+
+  function getTouchDistance(touches) {
+    const dx = touches[0].clientX - touches[1].clientX;
+    const dy = touches[0].clientY - touches[1].clientY;
+    return Math.hypot(dx, dy);
+  }
+
+  container.addEventListener('touchstart', (e) => {
+    if (e.touches.length === 1) {
+      state.isPanning = true;
+      state.startX = e.touches[0].clientX - state.panX;
+      state.startY = e.touches[0].clientY - state.panY;
+    } else if (e.touches.length === 2) {
+      state.isPanning = false;
+      initialPinchDist = getTouchDistance(e.touches);
+      initialZoom = state.zoom;
+    }
+  }, { passive: false });
+
+  container.addEventListener('touchmove', (e) => {
+    e.preventDefault();
+    if (e.touches.length === 1 && state.isPanning) {
+      state.panX = e.touches[0].clientX - state.startX;
+      state.panY = e.touches[0].clientY - state.startY;
+      draw();
+    } else if (e.touches.length === 2 && initialPinchDist) {
+      const currentDist = getTouchDistance(e.touches);
+      const scaleFactor = currentDist / initialPinchDist;
+      state.zoom = Math.max(2, Math.min(80, initialZoom * scaleFactor));
+      const zoomEl = document.getElementById('zoom-val');
+      if (zoomEl) zoomEl.innerText = Math.round(state.zoom * 5) + '%';
+      draw();
+    }
+  }, { passive: false });
+
+  container.addEventListener('touchend', (e) => {
+    if (e.touches.length < 2) {
+      initialPinchDist = null;
+    }
+    if (e.touches.length === 0) {
+      state.isPanning = false;
+    } else if (e.touches.length === 1) {
+      state.isPanning = true;
+      state.startX = e.touches[0].clientX - state.panX;
+      state.startY = e.touches[0].clientY - state.panY;
+    }
+  });
+
+  // Recalcula automáticamente el tamaño del canvas ante cambios de orientación o barras móviles
+  if (typeof ResizeObserver !== 'undefined') {
+    const ro = new ResizeObserver(() => {
+      resizeCanvas();
+      resetFit();
+    });
+    ro.observe(container);
+  }
+
+  window.addEventListener('orientationchange', () => {
+    setTimeout(() => {
+      resizeCanvas();
+      resetFit();
+    }, 200);
+  });
+})();
