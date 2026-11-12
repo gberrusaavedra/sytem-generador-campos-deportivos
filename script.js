@@ -2172,3 +2172,70 @@ async function submitRecoverForm() {
     btn.innerText = 'Actualizar Contraseña';
   }
 }
+/* =========================================================
+   RESTAURACIÓN DE GUARDADO EN NUBE Y BARRA DE USUARIO
+   ========================================================= */
+function openAuthModal() {
+  const modal = document.getElementById('modal-auth');
+  if (modal) modal.classList.add('active');
+}
+
+function closeAuthModal() {
+  const modal = document.getElementById('modal-auth');
+  if (modal) modal.classList.remove('active');
+}
+
+async function guardarProyectoPrompt() {
+  const token = localStorage.getItem('token_sesion');
+  if (!token) {
+    openAuthModal();
+    return;
+  }
+
+  const nombreProyecto = prompt(
+    'Ingresa un nombre para guardar este plano deportivo:',
+    `Cancha ${state.len}x${state.wid}m`
+  );
+  if (!nombreProyecto || !nombreProyecto.trim()) return;
+
+  await guardarProyectoEnBD(nombreProyecto.trim());
+}
+
+function actualizarBarraSesion() {
+  const token = localStorage.getItem('token_sesion');
+  const userStr = localStorage.getItem('usuario_actual');
+  const bar = document.getElementById('user-session-bar');
+  const nameSpan = document.getElementById('user-display-name');
+  const avatarDiv = document.getElementById('user-avatar-initials');
+
+  if (token && userStr) {
+    try {
+      const user = JSON.parse(userStr);
+      if (bar && nameSpan) {
+        nameSpan.innerText = user.nombre;
+        if (avatarDiv && user.nombre) {
+          const partes = user.nombre.trim().split(/\s+/);
+          const iniciales = partes.length >= 2
+            ? (partes[0][0] + partes[1][0]).toUpperCase()
+            : user.nombre.slice(0, 2).toUpperCase();
+          avatarDiv.innerText = iniciales;
+        }
+        bar.style.setProperty('display', 'flex', 'important');
+      }
+      closeAuthModal();
+    } catch (e) {
+      openAuthModal();
+    }
+  } else {
+    if (bar) bar.style.setProperty('display', 'none', 'important');
+    openAuthModal();
+  }
+}
+
+function cerrarSesionUsuario() {
+  localStorage.removeItem('token_sesion');
+  localStorage.removeItem('usuario_actual');
+  actualizarBarraSesion();
+}
+
+actualizarBarraSesion();
