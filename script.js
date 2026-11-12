@@ -1726,12 +1726,12 @@ async function registrarNuevoUsuario(nombre, email, password) {
 const API_URL = 'https://backend-cadsport.onrender.com/api';
 
 // Registrar usuario
-async function registrarNuevoUsuario(nombre, email, password) {
+async function registrarNuevoUsuario(nombre, email, password, palabraSecreta) {
   try {
     const respuesta = await fetch(`${API_URL}/usuarios/registro`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ nombre, email, password })
+      body: JSON.stringify({ nombre, email, password, palabraSecreta })
     });
 
     const data = await respuesta.json();
@@ -1894,31 +1894,27 @@ setFieldColor = function(hex, btnId) {
    ========================================================= */
 let isRegisterMode = false;
 
-function openAuthModal() {
-  const modal = document.getElementById('modal-auth');
-  if (modal) modal.classList.add('active');
-}
-
-function closeAuthModal() {
-  const modal = document.getElementById('modal-auth');
-  if (modal) modal.classList.remove('active');
-}
-
 function toggleAuthMode() {
   isRegisterMode = !isRegisterMode;
   const title = document.getElementById('auth-title');
   const nameGroup = document.getElementById('auth-name-group');
+  const secretGroup = document.getElementById('auth-secret-group');
+  const forgotWrap = document.getElementById('forgot-pass-wrap');
   const submitBtn = document.getElementById('btn-auth-submit');
   const toggleLink = document.getElementById('toggle-auth-link');
 
   if (isRegisterMode) {
     title.innerText = 'Crear Cuenta Nueva';
-    nameGroup.style.display = 'flex';
+    nameGroup.style.display = 'block';
+    if (secretGroup) secretGroup.style.display = 'block';
+    if (forgotWrap) forgotWrap.style.display = 'none';
     submitBtn.innerText = 'Registrarme';
     toggleLink.innerText = '¿Ya tienes cuenta? Inicia sesión aquí';
   } else {
     title.innerText = 'Iniciar Sesión';
     nameGroup.style.display = 'none';
+    if (secretGroup) secretGroup.style.display = 'none';
+    if (forgotWrap) forgotWrap.style.display = 'block';
     submitBtn.innerText = 'Entrar';
     toggleLink.innerText = '¿No tienes cuenta? Regístrate aquí';
   }
@@ -1928,6 +1924,8 @@ async function submitAuthForm() {
   const nombre = document.getElementById('auth-name').value.trim();
   const email = document.getElementById('auth-email').value.trim();
   const pass = document.getElementById('auth-pass').value.trim();
+  const secretInput = document.getElementById('auth-secret');
+  const palabraSecreta = secretInput ? secretInput.value.trim() : '';
 
   if (!email || !pass) {
     alert('Por favor ingresa tu correo y contraseña.');
@@ -1941,15 +1939,14 @@ async function submitAuthForm() {
 
   try {
     if (isRegisterMode) {
-      if (!nombre) {
-        alert('Por favor ingresa tu nombre completo.');
+      if (!nombre || !palabraSecreta) {
+        alert('Por favor ingresa tu nombre completo y tu palabra secreta.');
         return;
       }
-      const ok = await registrarNuevoUsuario(nombre, email, pass);
+      const ok = await registrarNuevoUsuario(nombre, email, pass, palabraSecreta);
       if (ok) {
-        // Inicia sesión automáticamente tras registrarse
         const logged = await iniciarSesionUsuario(email, pass);
-      if (logged) {
+        if (logged) {
           closeAuthModal();
           actualizarBarraSesion();
         }
@@ -1981,6 +1978,104 @@ async function guardarProyectoPrompt() {
   if (!nombreProyecto || !nombreProyecto.trim()) return;
 
   await guardarProyectoEnBD(nombreProyecto.trim());
+}
+
+/* =========================================================
+   ACCESO OBLIGATORIO: LOGIN / REGISTRO AL INICIAR EL SISTEMA
+   ========================================================= */
+function actualizarBarraSesion() {
+  const token = localStorage.getItem('token_sesion');
+  const userStr = localStorage.getItem('usuario_actual');
+  const bar = document.getElementById('user-session-bar');
+  const nameSpan = document.getElementById('user-display-name');
+  const avatarDiv = document.getElementById('user-avatar-initials');
+
+  if (token && userStr) {
+    try {
+      const user = JSON.parse(userStr);
+      if (bar && nameSpan) {
+        nameSpan.innerText = user.nombre;
+        if (avatarDiv && user.nombre) {
+          const partes = user.nombre.trim().split(/\s+/);
+          const iniciales = partes.length >= 2
+            ? (partes[0][0] + partes[1][0]).toUpperCase()
+            : user.nombre.slice(0, 2).toUpperCase();
+          avatarDiv.innerText = iniciales;
+        }
+        bar.style.setProperty('display', 'flex', 'important');
+      }
+      closeAuthModal();
+    } catch (e) {
+      openAuthModal();
+    }
+  } else {
+    if (bar) bar.style.setProperty('display', 'none', 'important');
+    openAuthModal();
+  }
+}
+
+function cerrarSesionUsuario() {
+  localStorage.removeItem('token_sesion');
+  localStorage.removeItem('usuario_actual');
+  actualizarBarraSesion();
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+  actualizarBarraSesion();
+});
+
+function abrirVistaRecuperar() {
+  document.getElementById('auth-title').innerText = 'Recuperar Contraseña';
+  document.getElementById('auth-main-view').style.display = 'none';
+  document.getElementById('auth-recover-view').style.display = 'block';
+  const correoActual = document.getElementById('auth-email').value.trim();
+  if (correoActual) document.getElementById('rec-email').value = correoActual;
+}
+
+function volverVistaLogin() {
+  document.getElementById('auth-title').innerText = 'Iniciar Sesión';
+  document.getElementById('auth-recover-view').style.display = 'none';
+  document.getElementById('auth-main-view').style.display = 'block';
+}
+
+async function submitRecoverForm() {
+  const email = document.getElementById('rec-email').value.trim();
+  const palabraSecreta = document.getElementById('rec-secret').value.trim();
+  const nuevaPassword = document.getElementById('rec-new-pass').value;
+  const btn = document.getElementById('btn-recover-submit');
+
+  if (!email || !palabraSecreta || nuevaPassword.length < 6) {
+    alert('Completa tu correo, tu palabra secreta y una nueva contraseña (mínimo 6 caracteres).');
+    return;
+  }
+
+  btn.disabled = true;
+  btn.innerText = 'Validando...';
+
+  try {
+    const res = await fetch(`${API_URL}/usuarios/recuperar-password`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, palabraSecreta, nuevaPassword })
+    });
+    const data = await res.json();
+
+    if (!res.ok) {
+      alert(data.error || 'Palabra secreta incorrecta o correo no encontrado.');
+    } else {
+      alert('✅ Identidad verificada. Contraseña actualizada correctamente.');
+      document.getElementById('auth-email').value = email;
+      document.getElementById('auth-pass').value = '';
+      document.getElementById('rec-secret').value = '';
+      document.getElementById('rec-new-pass').value = '';
+      volverVistaLogin();
+    }
+  } catch (err) {
+    alert('Error de conexión con el servidor.');
+  } finally {
+    btn.disabled = false;
+    btn.innerText = 'Validar y Actualizar';
+  }
 }
 /* =========================================================
    ACCESO OBLIGATORIO: LOGIN / REGISTRO AL INICIAR EL SISTEMA
@@ -2025,3 +2120,55 @@ function cerrarSesionUsuario() {
 window.addEventListener('DOMContentLoaded', () => {
   actualizarBarraSesion();
 });
+function abrirVistaRecuperar() {
+  document.getElementById('auth-title').innerText = 'Recuperar Contraseña';
+  document.getElementById('auth-main-view').style.display = 'none';
+  document.getElementById('auth-recover-view').style.display = 'block';
+  const correoActual = document.getElementById('auth-email').value.trim();
+  if (correoActual) document.getElementById('rec-email').value = correoActual;
+}
+
+function volverVistaLogin() {
+  document.getElementById('auth-title').innerText = 'Iniciar Sesión';
+  document.getElementById('auth-recover-view').style.display = 'none';
+  document.getElementById('auth-main-view').style.display = 'block';
+}
+
+async function submitRecoverForm() {
+  const email = document.getElementById('rec-email').value.trim();
+  const nuevaPassword = document.getElementById('rec-new-pass').value;
+  const btn = document.getElementById('btn-recover-submit');
+
+  if (!email || nuevaPassword.length < 6) {
+    alert('Ingresa un correo válido y una nueva contraseña de al menos 6 caracteres.');
+    return;
+  }
+
+  btn.disabled = true;
+  btn.innerText = 'Actualizando...';
+
+  try {
+    // Usa la misma URL base que tienes arriba en script.js para login/registro
+    const res = await fetch(`${API_URL}/api/auth/recuperar-password`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, nuevaPassword })
+    });
+    const data = await res.json();
+
+    if (!res.ok) {
+      alert(data.error || 'No se pudo cambiar la contraseña.');
+    } else {
+      alert('✅ Contraseña actualizada. Inicia sesión con tu nueva clave.');
+      document.getElementById('auth-email').value = email;
+      document.getElementById('auth-pass').value = '';
+      document.getElementById('rec-new-pass').value = '';
+      volverVistaLogin();
+    }
+  } catch (err) {
+    alert('Error de conexión con el servidor.');
+  } finally {
+    btn.disabled = false;
+    btn.innerText = 'Actualizar Contraseña';
+  }
+}
